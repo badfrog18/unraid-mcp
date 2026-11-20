@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>unraid-mcp</Name>
+  <Repository>ghcr.io/badfrog18/unraid-mcp:latest</Repository>
+  <Registry>https://github.com/badfrog18/unraid-mcp/pkgs/container/unraid-mcp</Registry>
+  <Network>bridge</Network>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Overview>MCP-Server für Claude: Unraid-GraphQL-API, Docker-Logs/-Steuerung und CrowdSec-Diagnose (cscli, nur lesend).</Overview>
+  <Category>Tools: Network:Management</Category>
+  <WebUI/>
+  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <Config Name="MCP-Port" Target="8790" Default="8790" Mode="tcp" Description="HTTP-Port, Endpunkt /mcp" Type="Port" Display="always" Required="true" Mask="false">8790</Config>
+  <Config Name="Docker-Socket" Target="/var/run/docker.sock" Default="/var/run/docker.sock" Mode="rw" Description="Für Logs, Inspect, Neustart und cscli" Type="Path" Display="always" Required="true" Mask="false">/var/run/docker.sock</Config>
+  <Config Name="MCP_AUTH_TOKEN" Target="MCP_AUTH_TOKEN" Default="" Mode="" Description="Bearer-Token für Claude (z.B. openssl rand -hex 32)" Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="UNRAID_API_URL" Target="UNRAID_API_URL" Default="http://192.168.178.60/graphql" Mode="" Description="GraphQL-Endpunkt deines Unraid" Type="Variable" Display="always" Required="true" Mask="false">http://192.168.178.60/graphql</Config>
+  <Config Name="UNRAID_API_KEY" Target="UNRAID_API_KEY" Default="" Mode="" Description="Unraid API-Key (Rolle VIEWER reicht)" Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="UNRAID_VERIFY_TLS" Target="UNRAID_VERIFY_TLS" Default="true" Mode="" Description="false bei selbstsigniertem Zertifikat" Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="CROWDSEC_CONTAINER" Target="CROWDSEC_CONTAINER" Default="crowdsec" Mode="" Description="Name des CrowdSec-Containers" Type="Variable" Display="always" Required="false" Mask="false">crowdsec</Config>
+  <Config Name="BOUNCER_CONTAINER" Target="BOUNCER_CONTAINER" Default="" Mode="" Description="Name des UniFi-Bouncer-Containers (leer = automatisch *bouncer*)" Type="Variable" Display="always" Required="false" Mask="false"></Config>
+  <Config Name="PROTECTED_CONTAINERS" Target="PROTECTED_CONTAINERS" Default="unraid-mcp" Mode="" Description="Kommagetrennt: dürfen nicht gestoppt/neu gestartet werden" Type="Variable" Display="advanced" Required="false" Mask="false">unraid-mcp</Config>
+</Container>
