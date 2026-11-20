@@ -95,6 +95,31 @@ def _mask_env(env: list[str]) -> dict[str, str]:
     return out
 
 
+def _mask_cmd(cmd: list[str] | None) -> list[str] | None:
+    """Maskiert Geheimnisse in Startargumenten (--token X, --password=X, lange Token-Strings)."""
+    if not cmd:
+        return cmd
+    out: list[str] = []
+    hide_next = False
+    for arg in cmd:
+        if hide_next:
+            out.append("***")
+            hide_next = False
+            continue
+        if arg.startswith("-") and SENSITIVE_ENV.search(arg):
+            if "=" in arg:
+                out.append(arg.split("=", 1)[0] + "=***")
+            else:
+                out.append(arg)
+                hide_next = True
+            continue
+        if len(arg) >= 40 and re.fullmatch(r"[A-Za-z0-9_\-+/=.]+", arg):
+            out.append("***")
+            continue
+        out.append(arg)
+    return out
+
+
 def _parse_since(since: str | None) -> datetime | None:
     """'15m', '2h', '1d' oder ISO-Zeitpunkt → datetime (UTC)."""
     if not since:
@@ -136,7 +161,7 @@ async def _graphql(query: str, variables: dict | None = None) -> dict:
 
 mcp = MCPServer(
     name="unraid",
-    version="0.2.0",
+    version="0.2.1",
     instructions=(
         "Zugriff auf den Unraid-Server: Systemstatus und Array über die Unraid-GraphQL-API, "
         "Docker-Container (Logs, Inspect, Stats, Neustart) über den Docker-Socket und "
@@ -281,7 +306,7 @@ async def docker_inspect(container: str) -> str:
             "netzwerke": list((a.get("NetworkSettings", {}).get("Networks") or {}).keys()),
             "mounts": [f'{m.get("Source")} -> {m.get("Destination")} ({"rw" if m.get("RW") else "ro"})' for m in a.get("Mounts", [])],
             "env": _mask_env(a.get("Config", {}).get("Env", [])),
-            "cmd": a.get("Config", {}).get("Cmd"),
+            "cmd": _mask_cmd(a.get("Config", {}).get("Cmd")),
             "labels_unraid": {k: v for k, v in (a.get("Config", {}).get("Labels") or {}).items() if "unraid" in k.lower()},
         }
 
@@ -611,7 +636,7 @@ async def crowdsec_diagnose(log_minutes: int = 60) -> str:
             raw = b.logs(stdout=True, stderr=True, since=since, timestamps=True).decode("utf-8", errors="replace")
             lines = raw.splitlines()
             rx_err = re.compile(r"(error|fatal|panic|fail|unauthori[sz]ed|forbidden|timeout|refused)", re.I)
-            rx_create = re.compile(r"(creat|add|new|post|insert).{0,40}(group|rule|policy|object)", re.I)
+            rx_create = re.compile(r"((creat|add|new|post|insert).{0,40}(group|rule|policy|object))|((group|rule|policy|object).{0,20}(posted|created|added))", re.I)
             rx_delete = re.compile(r"(delet|remov).{0,40}(group|rule|policy|object)", re.I)
             rx_start = re.compile(r"(starting|started|initiali[sz]|version)", re.I)
             report["bouncer_log"] = {
